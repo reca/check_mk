@@ -1,0 +1,63 @@
+#!/usr/bin/python
+# -*- encoding: utf-8; py-indent-offset: 4 -*-
+#
+# get Cisco DOM transceiver optical power values
+
+def parse_cisco_transceiver_sensor(info):
+    description_info, state_info = info
+
+    descriptions = dict(description_info)
+        
+    sensors = []
+    for id, sensortype, value, sensorstate in state_info:
+        sensors.append( (id, descriptions.get(id), sensortype, value, sensorstate) )
+
+    return sensors
+
+
+def inventory_cisco_transceiver_sensor(info):
+    sensors = parse_cisco_transceiver_sensor(info)
+    inventory = []
+    for id, descr, type, value, state in sensors:
+            if type == '14':
+                inventory.append(( descr, None ))
+
+    return inventory
+
+def check_cisco_transceiver_sensor(item, params, info):
+    sensors = parse_cisco_transceiver_sensor(info)
+
+    for id, descr, type, value, state in sensors:
+        if item == descr:
+            if state == '2':
+                return (0, "Sensor is unavailable")
+            if state == '3':
+                return (3, "Sensor is nonoperational")
+
+            a = value
+            b = float(a)
+            c = b / 10
+            perfdata = [ ("power (dBm)", c, 0.4, 0.9) ]
+
+            return (0, "Power: %s dBm" % c, perfdata)
+
+check_info['cisco_transceiver_sensor'] = {
+    "check_function"        : check_cisco_transceiver_sensor,
+    "inventory_function"    : inventory_cisco_transceiver_sensor,
+    "service_description"   : "Transceiver %s",
+    "group"                 : "if",
+    "has_perfdata"          : True,
+    "snmp_info"             : [
+                                    ( ".1.3.6.1.2.1.47.1.1.1.1", [
+                                        OID_END,
+                                        2, # description
+                                    ]),
+
+                                    ( ".1.3.6.1.4.1.9.9.91.1.1.1.1", [
+                                        OID_END,
+                                        1, # type
+                                        4, # value
+                                        5, # state
+                                    ]),
+                                ]
+}
