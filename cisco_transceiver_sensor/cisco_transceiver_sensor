@@ -37,7 +37,7 @@ def check_cisco_transceiver_sensor(item, params, info):
             a = value
             b = float(a)
             c = b / 10
-            perfdata = [ ("power (dBm)", c, 0.4, 0.9) ]
+            perfdata = [ ("power", "%f dBm" % c, 0.4, 0.9) ]
 
             return (0, "Power: %s dBm" % c, perfdata)
 
