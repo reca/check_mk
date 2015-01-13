@@ -4,13 +4,22 @@
 # get Cisco DOM transceiver optical power values
 
 def parse_cisco_transceiver_sensor(info):
-    description_info, state_info = info
+    description_info, state_info, levels_info = info
 
     descriptions = dict(description_info)
-        
+
+    thresholds = {}
+    for id, sensortype, scale, value, sensorstate in state_info:
+        thresholds.setdefault(id, [])
+
+    for endoid, level in levels_info:
+        id, subid = endoid.split('.')
+        thresholds.setdefault(id, []).append(saveint(level))
+
     sensors = []
-    for id, sensortype, value, sensorstate in state_info:
-        sensors.append( (id, descriptions.get(id), sensortype, value, sensorstate) )
+    for id, sensortype, scale, value, sensorstate in state_info:
+        sensors.append( (id, descriptions.get(id), sensortype, scale,
+                        value, sensorstate, thresholds[id]) )
 
     return sensors
 
@@ -18,28 +27,49 @@ def parse_cisco_transceiver_sensor(info):
 def inventory_cisco_transceiver_sensor(info):
     sensors = parse_cisco_transceiver_sensor(info)
     inventory = []
-    for id, descr, type, value, state in sensors:
-            if type == '14':
-                inventory.append(( descr, None ))
+    for id, descr, type, scale, value, state, levels in sensors:
+        if type == '14':
+            inventory.append(( descr, None ))
 
     return inventory
 
 def check_cisco_transceiver_sensor(item, params, info):
     sensors = parse_cisco_transceiver_sensor(info)
 
-    for id, descr, type, value, state in sensors:
+    for id, descr, type, scale, value, sensorstate, levels in sensors:
         if item == descr:
-            if state == '2':
-                return (0, "Sensor is unavailable")
-            if state == '3':
-                return (3, "Sensor is nonoperational")
+            crit_high = levels[0]
+            warn_high = levels[1]
+            crit_low = levels[2]
+            warn_low = levels[3]
 
-            a = value
-            b = float(a)
-            c = b / 10
-            perfdata = [ ("power", "%f dBm" % c, 0.4, 0.9) ]
+            if scale == '8': # milli
+                value = saveint(value)/1000.0
+                crit_high=crit_high/1000.0
+                warn_high=warn_high/1000.0
+                crit_low=crit_low/1000.0
+                warn_low=warn_low/1000.0
 
-            return (0, "Power: %s dBm" % c, perfdata)
+            if sensorstate == "2":
+                return (3, "data from sensor currently not available")
+            elif sensorstate == "3":
+                return (3, "sensor is broken")
+
+            if value >= crit_high:
+                state = 2
+            elif value >= warn_high:
+                state = 1
+            elif value <= crit_low:
+                state = 2
+            elif value <= warn_low:
+                state = 1
+            else:
+                state = 0
+
+            return (state, "%.3f dB (levels at %.1f:%.1f/%.1f:%.1f)" % (value,
+                warn_low, warn_high, crit_low, crit_high), [
+                ( "power", "%.3f" % value, "%.1f:%.1f" % (warn_low, warn_high),
+                    "%.1f:%.1f" % (crit_low, crit_high)) ])
 
 check_info['cisco_transceiver_sensor'] = {
     "check_function"        : check_cisco_transceiver_sensor,
@@ -56,8 +86,14 @@ check_info['cisco_transceiver_sensor'] = {
                                     ( ".1.3.6.1.4.1.9.9.91.1.1.1.1", [
                                         OID_END,
                                         1, # type
+                                        2, # scale (e.g. "8" == milli)
                                         4, # value
                                         5, # state
+                                    ]),
+
+                                    ( ".1.3.6.1.4.1.9.9.91.1.2.1.1", [
+                                        OID_END,
+                                        4, # value
                                     ]),
                                 ]
 }
