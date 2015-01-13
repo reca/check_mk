@@ -70,6 +70,7 @@ def check_cisco_transceiver_sensor(item, params, info):
                 warn_low, warn_high, crit_low, crit_high), [
                 ( "power", "%.3f" % value, "%.1f:%.1f" % (warn_low, warn_high),
                     "%.1f:%.1f" % (crit_low, crit_high)) ])
+    return (3, "Sensor not found in SNMP data")
 
 check_info['cisco_transceiver_sensor'] = {
     "check_function"        : check_cisco_transceiver_sensor,
