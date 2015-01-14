@@ -28,7 +28,11 @@ def inventory_cisco_transceiver_sensor(info):
     sensors = parse_cisco_transceiver_sensor(info)
     inventory = []
     for id, descr, type, scale, value, state, levels in sensors:
-        if type == '14':
+        if type == "3": # voltage sensor (AC)
+            inventory.append(( descr, None ))
+        elif type == "5" : # current sensor
+            inventory.append(( descr, None ))
+        elif type == "14": # power sensor
             inventory.append(( descr, None ))
 
     return inventory
@@ -66,10 +70,24 @@ def check_cisco_transceiver_sensor(item, params, info):
             else:
                 state = 0
 
-            return (state, "%.3f dB (levels at %.1f:%.1f/%.1f:%.1f)" % (value,
-                warn_low, warn_high, crit_low, crit_high), [
-                ( "power", "%.3f" % value, "%.1f:%.1f" % (warn_low, warn_high),
-                    "%.1f:%.1f" % (crit_low, crit_high)) ])
+            if type == "3": # voltage sensor (AC)
+                return (state, "%.3f V (levels at %.1f:%.1f/%.1f:%.1f)"
+                        % (value, warn_low, warn_high, crit_low, crit_high),
+                        [( "voltage", "%.3f" % value, "%.1f:%.1f"
+                            % (warn_low, warn_high), "%.1f:%.1f"
+                            % (crit_low, crit_high)) ])
+            if type == "5": # current sensor
+                return (state, "%.3f mA (levels at %.1f:%.1f/%.1f:%.1f)"
+                        % (value, warn_low, warn_high, crit_low, crit_high),
+                        [( "current", "%.3f" % value, "%.1f:%.1f"
+                            % (warn_low, warn_high), "%.1f:%.1f"
+                            % (crit_low, crit_high)) ])
+            if type == "14": # power sensor
+                return (state, "%.3f dB (levels at %.1f:%.1f/%.1f:%.1f)"
+                        % (value, warn_low, warn_high, crit_low, crit_high),
+                        [( "power", "%.3f" % value, "%.1f:%.1f"
+                            % (warn_low, warn_high), "%.1f:%.1f"
+                            % (crit_low, crit_high)) ])
     return (3, "Sensor not found in SNMP data")
 
 check_info['cisco_transceiver_sensor'] = {
