@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 #
-# get Cisco DOM transceiver optical power values
+# get Cisco DOM transceiver values (voltage, current, power)
 
 def parse_cisco_transceiver_sensor(info):
     description_info, state_info, levels_info = info
