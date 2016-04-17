@@ -3,9 +3,6 @@
 
 import binascii;
 
-def cisco_sla_decode_ip(ip):
-    return ".".join([ "%d" % (c) for c in [ ord(i) for i in ip ]])
-
 def inventory_cisco_ipsla(info):
     return [ (binascii.hexlify(ip), None) for (index, ip, rtt, mos, jitter) in info ]
 
