@@ -41,3 +41,4 @@ check_info["checkpoint_temp"] = {
     "snmp_scan_function"    : scan_checkpoint,
     "includes"              : [ "checkpoint.include" ],
 }
+
