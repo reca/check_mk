@@ -31,14 +31,15 @@ def check_checkpoint_temp(item, _no_params, info):
     for index, name, value, unit, type, state in info:
         if name == item:
             state = saveint(state)
+            perfdata = [ ( "temperature", value ) ]
             if state == 0:
-                return (0, "Temperature is %s°C " % value )
+                return (0, "Temperature is %s°C " % value, perfdata )
             if state == 1:
-                return (2, "Temperature is out of normal range: %s°C " % value )
+                return (2, "Temperature is out of normal range: %s°C " % value, perfdata )
             if state == 2:
-                return (3, "Reading error: %s°C " % value )
+                return (3, "Reading error: %s°C " % value, perfdata )
             else:
-                return (3, "invalid state: %s°C " % value )
+                return (3, "invalid state: %s°C " % value, perfdata )
 
     return (3, "Sensor not found in SNMP output")
 
@@ -46,6 +47,7 @@ check_info["checkpoint_temp"] = {
     "check_function"        : check_checkpoint_temp,
     "inventory_function"    : inventory_checkpoint_temp,
     "service_description"   : "Temperature %s",
+    "has_perfdata"          : True,
     "snmp_info"             : ( ".1.3.6.1.4.1.2620.1.6.7.8.1.1", [
                                     "1", # temperatureSensorIndex
                                     "2", # temperatureSensorName
