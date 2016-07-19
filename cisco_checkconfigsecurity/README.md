@@ -23,6 +23,10 @@ Warn if the idle timeout is not 10 minutes.
 Warn if there are local useraccounts configured (e.g. because it's only
 permitted to use a central authentication instance)
 
+#### VLAN 1 usage
+Because of default usage of VLAN 1 on many devices this VLAN must not be used untagged in
+switchports.
+
 ### Installation
 Just copy the file to the directory where the check_mk_agent is looking for
 local plugins (e.g. /usr/lib/check_mk_agent/local)

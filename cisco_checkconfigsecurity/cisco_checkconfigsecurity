@@ -7,12 +7,13 @@
 # |           | |___| | | |  __/ (__|   <    | |  | | . \            |
 # |            \____|_| |_|\___|\___|_|\_\___|_|  |_|_|\_\           |
 # |                                                                  |
-# | check_mk plugin < cisco security hardening check >               |
+# | check_mk plugin < cisco security hardening check > for comdirect |
 # +------------------------------------------------------------------+
 #
 # Rene Caspari, Jul 18/2016, initial version
 # Rene Caspari, Jul 19/2016, changed message queue reporting
 #                            added local username check
+# Rene Caspari, Jul 22/2016, added vlan 1 usage check
 import os
 import sys
 import re
@@ -48,27 +49,102 @@ MSGQUEUE['local usernames configured'] = []
 def check_username(config):
 
     for line in config:
-        if line.startswith("username"):
-            if not line.startswith("username admin"):
+        if line.startswith("username") == 1:
+            if not line.startswith("username local_fallback_user"):
                 return 1
     return
 
+# CHECK 3: vlan1_usage
+# vlan 1 must not be used
+MSGQUEUE['vlan1_used'] = []
+def check_vlan1_used(config):
+    flag = 0
+    interface = ""
+    interface_config = {}
+    interface_line = []
+    description = ""
+    shutdown = 0
+    switchport_mode = ""
+    switchport_access_vlan = ""
+
+    for line in config:
+
+        if line.startswith("interface") == 1:
+            parse = line.split (" ")
+            interface = parse[1]
+            interface = interface[:-1]
+            interface_config[interface] = []
+            flag = 1
+
+        if flag == 1 and line.startswith("!") == 0 and line.startswith("interface") == 0:
+            interface_line.append(line[1:])
+
+        elif flag == 1 and line.startswith("!") == 1:
+
+            for line in interface_line:
+
+                if line.startswith("description"):
+                    description = line[12:-1]
+
+                elif line.startswith("shutdown"):
+                    shutdown = 1
+
+                elif line.startswith("switchport mode"):
+                    switchport_mode = line[16:-1]
+
+                elif line.startswith("switchport access vlan"):
+                    switchport_access_vlan = line[23:-1]
+
+            if not shutdown and switchport_mode == "access" and (switchport_access_vlan == "" or
+                switchport_access_vlan == "1"):
+                interface = ""
+                interface_line = []
+                description = ""
+                shutdown = 0
+                switchport_mode = ""
+                switchport_access_vlan = ""
+                flag = 0
+                return 1
+            else:
+                interface = ""
+                interface_line = []
+                description = ""
+                shutdown = 0
+                switchport_mode = ""
+                switchport_access_vlan = ""
+                flag = 0
+
+    return
+
 # main routine
+DEBUG = 0
 for GROUP in GROUPS:
     PATH = "%s%s%s" % (CONFIGROOT, GROUP, CONFIGSUB)
     os.chdir( PATH )
     DIRS = os.listdir( PATH )
 
-    for FILE in DIRS:
-        if ".svn" not in FILE:
-            config = config_read(FILE)
+    if not DEBUG:
+        for FILE in DIRS:
+            if ".svn" not in FILE:
+                config = config_read(FILE)
 
-            if check_exectimeout(config):
-                STATUS = 1
-                MSGQUEUE['exec-timeout incorrect'].append(FILE)
-            if check_username(config):
-                STATUS = 1
-                MSGQUEUE['local usernames configured'].append(FILE)
+                if check_exectimeout(config):
+                    STATUS = 1
+                    MSGQUEUE['exec-timeout incorrect'].append(FILE)
+                if check_username(config):
+                    STATUS = 1
+                    MSGQUEUE['local usernames configured'].append(FILE)
+                if check_vlan1_used(config):
+                    STATUS = 1
+                    MSGQUEUE['vlan1_used'].append(FILE)
+
+if DEBUG:
+    FILE = "single_example_file"
+    config = config_read("/local/directory/%s" % FILE)
+
+    if check_vlan1_used(config):
+        STATUS = 1
+        MSGQUEUE['vlan1_used'].append(FILE)
 
 print "<<<local>>>"
 print str(STATUS) + " Cisco - Cisco CheckSecureConfig:",
