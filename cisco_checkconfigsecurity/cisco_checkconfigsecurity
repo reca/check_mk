@@ -1,0 +1,83 @@
+#!/usr/bin/python
+#
+# +------------------------------------------------------------------+
+# |             ____ _               _        __  __ _  __           |
+# |            / ___| |__   ___  ___| | __   |  \/  | |/ /           |
+# |           | |   | '_ \ / _ \/ __| |/ /   | |\/| | ' /            |
+# |           | |___| | | |  __/ (__|   <    | |  | | . \            |
+# |            \____|_| |_|\___|\___|_|\_\___|_|  |_|_|\_\           |
+# |                                                                  |
+# | check_mk plugin < cisco security hardening check > for comdirect |
+# +------------------------------------------------------------------+
+#
+# Rene Caspari, Jul 18/2016, initial version
+# Rene Caspari, Jul 19/2016, changed message queue reporting
+#                            added local username check
+import os
+import sys
+import re
+
+CONFIGROOT = "/var/rancid/"
+GROUPS = ['QB', 'NO']
+CONFIGSUB = "/configs/"
+MSGQUEUE = {}
+STATUS = 0
+
+def config_read(svnfile):
+    config = []
+    fh = open (svnfile,'r')
+    for line in fh:
+        config.append(line)
+    fh.close()
+
+    return config
+
+# CHECK 1: IDLE TIMEOUT
+# idle timeout for SSH and console connections must be 10 minutes
+MSGQUEUE['exec-timeout incorrect'] = []
+def check_exectimeout(config):
+    for line in config:
+        if "exec-timeout" in line:
+            if "exec-timeout 10" not in line:
+                return 1
+    return
+
+# CHECK 2: local useraccounts
+# there must not be local useraccounts configured beside admin
+MSGQUEUE['local usernames configured'] = []
+def check_username(config):
+
+    for line in config:
+        if line.startswith("username"):
+            if not line.startswith("username admin"):
+                return 1
+    return
+
+# main routine
+for GROUP in GROUPS:
+    PATH = "%s%s%s" % (CONFIGROOT, GROUP, CONFIGSUB)
+    os.chdir( PATH )
+    DIRS = os.listdir( PATH )
+
+    for FILE in DIRS:
+        if ".svn" not in FILE:
+            config = config_read(FILE)
+
+            if check_exectimeout(config):
+                STATUS = 1
+                MSGQUEUE['exec-timeout incorrect'].append(FILE)
+            if check_username(config):
+                STATUS = 1
+                MSGQUEUE['local usernames configured'].append(FILE)
+
+print "<<<local>>>"
+print str(STATUS) + " Cisco - Cisco CheckSecureConfig:",
+if STATUS == 0:
+    print "everything looks fine."
+else:
+    keys = MSGQUEUE.keys()
+    for key in keys:
+        if MSGQUEUE[key]:
+            print "\"%s\":" % key,
+            for values in MSGQUEUE[key]:
+                print "%s" % values,
