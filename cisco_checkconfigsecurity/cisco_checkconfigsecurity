@@ -7,7 +7,7 @@
 # |           | |___| | | |  __/ (__|   <    | |  | | . \            |
 # |            \____|_| |_|\___|\___|_|\_\___|_|  |_|_|\_\           |
 # |                                                                  |
-# | check_mk plugin < cisco security hardening check > for comdirect |
+# | check_mk plugin < cisco security hardening check >               |
 # +------------------------------------------------------------------+
 #
 # Rene Caspari, Jul 18/2016, initial version
@@ -18,7 +18,7 @@ import sys
 import re
 
 CONFIGROOT = "/var/rancid/"
-GROUPS = ['QB', 'NO']
+GROUPS = ['GROUP1', 'GROUP2']
 CONFIGSUB = "/configs/"
 MSGQUEUE = {}
 STATUS = 0
