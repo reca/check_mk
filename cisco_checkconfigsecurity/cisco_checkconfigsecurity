@@ -18,7 +18,7 @@ import sys
 import re
 
 CONFIGROOT = "/var/rancid/"
-GROUPS = ['QB', 'NO']
+GROUPS = ['GROUP1', 'GROUP2']
 CONFIGSUB = "/configs/"
 MSGQUEUE = {}
 STATUS = 0
