@@ -27,6 +27,10 @@ permitted to use a central authentication instance)
 Because of default usage of VLAN 1 on many devices this VLAN must not be used untagged in
 switchports.
 
+#### Remote Syslog
+Checks if there are remote syslog servers configured (remote_host_A, remote_host_B and remote_host_C).
+Customize if you have more or less servers to configure.
+
 ### Installation
 Just copy the file to the directory where the check_mk_agent is looking for
 local plugins (e.g. /usr/lib/check_mk_agent/local)

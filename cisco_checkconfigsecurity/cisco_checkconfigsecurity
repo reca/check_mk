@@ -116,35 +116,55 @@ def check_vlan1_used(config):
 
     return
 
+# CHECK 4: remote logging configured
+# configure IP_A, IP_B and IP_C to your needs and beware of escaping dots or
+# colons!
+# return if config does not contain "^logging.*___IP_A___.*$"
+#   or not "^logging.*___IP_B___.*$"
+#   or not "^logging.*___IP_C___.*$"
+MSGQUEUE['remote logging not correct'] = []
+def check_remote_logging(config):
+    remote_host_A = 0
+    remote_host_B = 0
+    remote_host_C = 0
+
+    for line in config:
+        if line.startswith(" #RANCID-CONTENT-TYPE: opengear"):
+            return
+        if re.match("^logging.*___IP_A___.*$", line):
+            remote_host_A = 1
+        if re.match("^logging.*___IP_B___.*$", line):
+            remote_host_B = 1
+        if re.match("^logging.*___IP_C___.*$", line):
+            remote_host_C = 1
+
+    if not remote_host_A or not remote_host_B or not remote_host_C:
+        return 1
+
+    return
+
 # main routine
-DEBUG = 0
 for GROUP in GROUPS:
     PATH = "%s%s%s" % (CONFIGROOT, GROUP, CONFIGSUB)
     os.chdir( PATH )
     DIRS = os.listdir( PATH )
 
-    if not DEBUG:
-        for FILE in DIRS:
-            if ".svn" not in FILE:
-                config = config_read(FILE)
+    for FILE in DIRS:
+        if ".svn" not in FILE:
+            config = config_read(FILE)
 
-                if check_exectimeout(config):
-                    STATUS = 1
-                    MSGQUEUE['exec-timeout incorrect'].append(FILE)
-                if check_username(config):
-                    STATUS = 1
-                    MSGQUEUE['local usernames configured'].append(FILE)
-                if check_vlan1_used(config):
-                    STATUS = 1
-                    MSGQUEUE['vlan1_used'].append(FILE)
-
-if DEBUG:
-    FILE = "single_example_file"
-    config = config_read("/local/directory/%s" % FILE)
-
-    if check_vlan1_used(config):
-        STATUS = 1
-        MSGQUEUE['vlan1_used'].append(FILE)
+            if check_exectimeout(config):
+                STATUS = 1
+                MSGQUEUE['exec-timeout incorrect'].append(FILE)
+            if check_username(config):
+                STATUS = 1
+                MSGQUEUE['local usernames configured'].append(FILE)
+            if check_vlan1_used(config):
+                STATUS = 1
+                MSGQUEUE['vlan1_used'].append(FILE)
+            if check_remote_logging(config):
+                STATUS = 1
+                MSGQUEUE['remote logging not correct'].append(FILE)
 
 print "<<<local>>>"
 print str(STATUS) + " Cisco - Cisco CheckSecureConfig:",
