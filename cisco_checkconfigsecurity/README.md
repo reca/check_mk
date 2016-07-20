@@ -5,7 +5,7 @@ The idea of this plugin is to check a local directory containing Cisco configura
 
 ```python
 CONFIGROOT = "/var/rancid/"
-GROUPS = ['QB', 'NO']
+GROUPS = ['GROUP1', 'GROUP2']
 CONFIGSUB = "/configs/"
 ```
 There are some validation routines which produce a warning if they fail.
