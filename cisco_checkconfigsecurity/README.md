@@ -3,17 +3,17 @@
 ### Content
 The idea of this plugin is to check a local directory containing Cisco configuration files.
 
-'''python
+```python
 CONFIGROOT = "/var/rancid/"
 GROUPS = ['QB', 'NO']
 CONFIGSUB = "/configs/"
-'''
+```
 
 There are some validation routines which produce a warning if they fail.
 
-'''python
+```python
 def check_exectimeout(config):
-'''
+```
 
 #### Idle Timeout
 Warn if the idle timeout is not 10 minutes.
